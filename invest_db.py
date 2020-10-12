@@ -1,6 +1,8 @@
-
+#!/usr/bin/python3
+# coding=utf8
 import pymysql
 from pymysql.cursors import DictCursor
+
 
 class DB:
     def __init__(self, connect_timeout=15):
@@ -19,8 +21,25 @@ class DB:
             p = 0
         else:
             p = agent_id
-        self.cursor.callproc('invest_db.get_idea', [p, ])
-        print("Printing laptop details")
-        for result in self.cursor.stored_results():
-            print(result.fetchall())
+        self.cursor.callproc('get_idea', [p,])
+        return self.cursor.fetchall()
 
+    def get_idea_agent(self):
+        self.cursor.callproc('get_idea_agent')
+        return self.cursor.fetchall()
+
+    def close(self):
+        self.conn.close()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self.conn.close()
+
+    def __del__(self):
+        self.conn.close()
+
+
+if __name__ == "__main__":
+    db = DB()
+    print(db.get_idea())
+    print(db.get_idea_agent())
+    db.close()

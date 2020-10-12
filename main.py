@@ -10,6 +10,8 @@ from twisted.internet import reactor
 from twisted.internet.threads import deferToThread
 import invest_db
 import os
+import tokens
+import hashlib
 
 class web_intercom(twisted.web.resource.Resource):
     def __init__(self):
@@ -46,18 +48,17 @@ class web_intercom(twisted.web.resource.Resource):
 
     def ctoken(self, request):
         s_ip = request.getClientIP()
-        if args.token == 'false':
-            return
         # print 'x-forwarded-for',request.getHeader('x-forwarded-for')
         cip = request.getHeader('x-real-ip')
         # return
         if 'pwd' in request.args and 'user' in request.args:
             pwd = request.args['pwd'][0]
             user = request.args['user'][0]
-            if user not in tokens.pwd
+            if user not in tokens.pwd:
+                raise Exception('bad user')
             t = hashlib.sha256(tokens.pwd[user])
             # dt += datetime.timedelta(minutes=13)
-            if token != t.hexdigest():
+            if pwd != t.hexdigest():
                 raise Exception('bad pwd')
         else:
             raise Exception('no pwd')
@@ -67,7 +68,7 @@ class web_intercom(twisted.web.resource.Resource):
         self.ctoken(request)
         cip = request.getHeader('x-real-ip')
         args = ''
-        if 'action' in request.args and 'ip' in request.args:
+        if 'action' in request.args:
             s = request.args['action'][0]
             s = s.replace('"', '').replace("'", '')
             db = invest_db.DB()
@@ -79,6 +80,7 @@ class web_intercom(twisted.web.resource.Resource):
                 ex = 'db.%s(%s)' % (s, args)
                 print cip, 'execute:', ex
                 ret = eval(ex)
+                db.close()
                 return {'code': 0, 'result': ret}
             except Exception as ex:
                 print 'Exception eval(ex)'
